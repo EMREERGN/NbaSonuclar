@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.v7.widget.RecyclerView
-    android:id="@+id/recyclerview_main"
-    android:padding="10dp"
+<LinearLayout
+    android:orientation="vertical"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -9,5 +8,11 @@
     android:layout_height="match_parent"
     tools:context="emremedia.com.nbasonuclar.MainActivity">
 
+    <android.support.v4.view.ViewPager
+        android:id="@+id/myViewPager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    </android.support.v4.view.ViewPager>
 
-</android.support.v7.widget.RecyclerView>
+
+</LinearLayout>

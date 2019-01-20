@@ -6,6 +6,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Toast;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -25,6 +26,7 @@ import emremedia.com.nbasonuclar.MainActivity;
 import emremedia.com.nbasonuclar.Model.MatchResult;
 import emremedia.com.nbasonuclar.Model.Days;
 import emremedia.com.nbasonuclar.R;
+import io.paperdb.Paper;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -38,7 +40,10 @@ public class FullscreenActivity extends AppCompatActivity {
     String adress = "https://www.cbssports.com/nba/scoreboard/";
     StringBuilder sb;
     Calendar cal;
+    Calendar calControl;
     DateFormat dateFormat;
+
+    int kacGunlukVeri=11;
 
     int count=1;
 
@@ -49,22 +54,36 @@ public class FullscreenActivity extends AppCompatActivity {
 
         windowsHideInıts();
 
+        Paper.init(this);
+
+
 
         matchResults =new ArrayList<>();
         oneWeekMatches =new ArrayList<>();
         sb = new StringBuilder();
-        cal = Calendar.getInstance();
-
         dateFormat = new SimpleDateFormat("yyyyMMdd");
-        DateFormat cardDateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        cal = Calendar.getInstance();
+        calControl=Paper.book().read("Time");
 
 
-        sb.append(adress);
-        cal.add(Calendar.DATE, -1); // 1 gün önceki  veriler gelir
-        sb.append(dateFormat.format(cal.getTime())); //20190119
-        sb.append("/");
+        oneWeekMatches=Paper.book().read("Data");
+        if (oneWeekMatches!=null && oneWeekMatches.size()>5 &&dateFormat.format(cal.getTime()).equals(dateFormat.format(calControl.getTime())))
+        {
+            Common.oneWeekMatches=oneWeekMatches;
+            Intent intent =new Intent(FullscreenActivity.this,MainActivity.class);
+            startActivity(intent);
+        }
+        else {
+            oneWeekMatches =new ArrayList<>();
+            sb.append(adress);
+            cal.add(Calendar.DATE, -1); // 1 gün önceki  veriler gelir
+            sb.append(dateFormat.format(cal.getTime())); //20190119
+            sb.append("/");
 
-        new VeriGetir(sb.toString(), matchResults).execute();  // proceses başlatılır
+            new VeriGetir(sb.toString(), matchResults).execute();  // proceses başlatılır
+
+        }
+
 
     }
 
@@ -111,9 +130,16 @@ public class FullscreenActivity extends AppCompatActivity {
             today.setMatchResults(matchResults);
             oneWeekMatches.add(today);
             Common.oneWeekMatches.add(today);
+            if (count==kacGunlukVeri)
+            {
+                Paper.book().write("Data",oneWeekMatches);
+                cal = Calendar.getInstance();
+                Paper.book().write("Time",cal);
+            }
+
 
             count++;
-            if (count<8) // 7 günlük veriler çekilir
+            if (count<kacGunlukVeri+1) // 11 günlük veriler çekilir
             {
                 matchResults=new ArrayList<>();
                 sb=new StringBuilder();
@@ -122,6 +148,7 @@ public class FullscreenActivity extends AppCompatActivity {
                 sb.append(dateFormat.format(cal.getTime())); //20190116
                 sb.append("/");
                 new VeriGetir(sb.toString(), matchResults).execute();  // bir önceki gün verileri çekilmeye başlanır
+
 
             }
             else {
