@@ -17,14 +17,13 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 import emremedia.com.nbasonuclar.Common.Common;
 import emremedia.com.nbasonuclar.MainActivity;
-import emremedia.com.nbasonuclar.Model.NbaResult;
-import emremedia.com.nbasonuclar.Model.Team;
+import emremedia.com.nbasonuclar.Model.MatchResult;
+import emremedia.com.nbasonuclar.Model.Days;
 import emremedia.com.nbasonuclar.R;
 
 /**
@@ -34,7 +33,14 @@ import emremedia.com.nbasonuclar.R;
 public class FullscreenActivity extends AppCompatActivity {
 
     private View mContentView;
-    List<NbaResult> nbaResults;
+    List<MatchResult> matchResults;
+    List<Days> oneWeekMatches;
+    String adress = "https://www.cbssports.com/nba/scoreboard/";
+    StringBuilder sb;
+    Calendar cal;
+    DateFormat dateFormat;
+
+    int count=1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,26 +50,21 @@ public class FullscreenActivity extends AppCompatActivity {
         windowsHideInıts();
 
 
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DATE, -2); // 1 gün önceki  veriler gelir
-        DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+        matchResults =new ArrayList<>();
+        oneWeekMatches =new ArrayList<>();
+        sb = new StringBuilder();
+        cal = Calendar.getInstance();
+
+        dateFormat = new SimpleDateFormat("yyyyMMdd");
         DateFormat cardDateFormat = new SimpleDateFormat("dd/MM/yyyy");
-        Date date = new Date();
 
-        System.out.println(cardDateFormat.format(cal.getTime())); //2016/11/16 12:08:43
 
-        StringBuilder sb = new StringBuilder();
-        String adress = "https://www.cbssports.com/nba/scoreboard/"; // https://www.cbssports.com/nba/scoreboard/20190116/
         sb.append(adress);
-        sb.append(dateFormat.format(cal.getTime())); //20190116
+        cal.add(Calendar.DATE, -1); // 1 gün önceki  veriler gelir
+        sb.append(dateFormat.format(cal.getTime())); //20190119
         sb.append("/");
 
-
-        nbaResults =new ArrayList<>();
-
-        new VeriGetir(sb.toString(), nbaResults).execute();
-
-
+        new VeriGetir(sb.toString(), matchResults).execute();  // proceses başlatılır
 
     }
 
@@ -84,46 +85,61 @@ public class FullscreenActivity extends AppCompatActivity {
                 | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
     }
 
-
     public class VeriGetir extends AsyncTask<Void,Void,Void>
     {
         String url;
-        List<NbaResult> nbaResults;
+        List<MatchResult> matchResults;
 
-        public VeriGetir(String url, List<NbaResult> nbaResults) {
+        public VeriGetir(String url, List<MatchResult> matchResults) {
             this.url=url;
-            this.nbaResults =nbaResults;
-
+            this.matchResults = matchResults;
         }
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-
         }
         @Override
         protected Void doInBackground(Void... voids) {
-            veriCek(url, nbaResults);
+            veriCek(url, matchResults);
             return null;
         }
         @Override
         protected void onPostExecute(Void aVoid) {
-            Common.nbaResults= nbaResults;
+            Days today =new Days(); // List<MatchResult> matchResults;  günün tüm maçları
 
-            Intent intent =new Intent(FullscreenActivity.this,MainActivity.class);
-            startActivity(intent);
+            today.setMatchResults(matchResults);
+            oneWeekMatches.add(today);
+            Common.oneWeekMatches.add(today);
+
+            count++;
+            if (count<8) // 7 günlük veriler çekilir
+            {
+                matchResults=new ArrayList<>();
+                sb=new StringBuilder();
+                sb.append(adress);
+                cal.add(Calendar.DATE, -1); // 1 gün önceki  veriler gelir
+                sb.append(dateFormat.format(cal.getTime())); //20190116
+                sb.append("/");
+                new VeriGetir(sb.toString(), matchResults).execute();  // bir önceki gün verileri çekilmeye başlanır
+
+            }
+            else {
+
+                Intent intent =new Intent(FullscreenActivity.this,MainActivity.class);
+                startActivity(intent);
+            }
 
         }
 
-
     }
 
-    //todo verileri çekip listeye ekler
-    private void veriCek(String url,List<NbaResult> nbaResults) {
 
-        NbaResult match;
+
+    private void veriCek(String url,List<MatchResult> matchResults) {
+
+        MatchResult match;
         Document document;
-        // ynew variable
         String statusGame;
 
         String homeTeamName;
@@ -139,11 +155,10 @@ public class FullscreenActivity extends AppCompatActivity {
 
         try {
             document = Jsoup.connect(url).get();
-
             Elements elements = document.select("div[class=live-update]");
             for (Element link : elements)
             {
-                match =new NbaResult();
+                match =new MatchResult();
                 awayteamPeriotScores = new String[5];
                 homeTeamPeriotScores= new String[5];
                 statusGame = link.select("div[class=game-status postgame]").text(); //Final or Final/OT
@@ -154,12 +169,10 @@ public class FullscreenActivity extends AppCompatActivity {
                 for (Element teams : team)
                 {
                     String splitedStrings[] = teams.text().split(" ");
-
                     if (takim == 0) // home team
                     {
                         // todo Home Team Verileri atanır
                         homeTeamName = splitedStrings[0];
-
 
                         if(homeTeamName.contains("Trail"))   // trail blazers iki isimden oluştuğu için hata oluşması engellendi
                         {
@@ -216,7 +229,6 @@ public class FullscreenActivity extends AppCompatActivity {
                     {
                         // todo Home Team Verileri atanır
                         awayTeamName = splitedStrings[0];
-
                         if(awayTeamName.contains("Trail"))  // trail blazers iki isimden oluştuğu için hata oluşması engellendi
                         {
                             awayTeamName=splitedStrings[0]+" "+splitedStrings[1];
@@ -280,14 +292,9 @@ public class FullscreenActivity extends AppCompatActivity {
                         awayTeamBesyPlayer=teams.text();
                         match.setAwayTeamBesyPlayer(awayTeamBesyPlayer);
                     }
-
                     takim++;
-
-
                 }
-
-                nbaResults.add(match);
-
+                matchResults.add(match);
             }
         } catch (IOException e) {
             e.printStackTrace();

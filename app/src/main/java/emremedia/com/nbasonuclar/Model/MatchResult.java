@@ -1,6 +1,6 @@
 package emremedia.com.nbasonuclar.Model;
 
-public class NbaResult {
+public class MatchResult {
 
     private String statusGame;
     private String homeTeamName;
@@ -15,10 +15,10 @@ public class NbaResult {
     private String awayTeamTotalScore;
     private String awayTeamBesyPlayer;
 
-    public NbaResult() {
+    public MatchResult() {
     }
 
-    public NbaResult(String statusGame, String homeTeamName, String homeTeamWinLost, String[] homeTeamPeriotScores, String homeTeamTotalScore, String homeTeamBesyPlayer, String awayTeamName, String awayTeamWinLost, String[] awayteamPeriotScores, String awayTeamTotalScore, String awayTeamBesyPlayer) {
+    public MatchResult(String statusGame, String homeTeamName, String homeTeamWinLost, String[] homeTeamPeriotScores, String homeTeamTotalScore, String homeTeamBesyPlayer, String awayTeamName, String awayTeamWinLost, String[] awayteamPeriotScores, String awayTeamTotalScore, String awayTeamBesyPlayer) {
         this.statusGame = statusGame;
         this.homeTeamName = homeTeamName;
         this.homeTeamWinLost = homeTeamWinLost;
